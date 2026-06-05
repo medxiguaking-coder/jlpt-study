@@ -1,16 +1,33 @@
-const CACHE = 'jlpt-v3';
-const ASSETS = ['/', '/index.html', '/style.css?v=3', '/app.js?v=3', '/data/vocab.js?v=3', '/data/grammar.js?v=3', '/data/srs.js?v=3'];
+const CACHE = 'jlpt-v4';
+const ASSETS = [
+  '/style.css?v=4',
+  '/app.js?v=4',
+  '/data/vocab.js?v=4',
+  '/data/grammar.js?v=4',
+  '/data/srs.js?v=4'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  // Activate immediately without waiting
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  // Never cache HTML — always fetch fresh from network
+  if (url.pathname === '/' || url.pathname.endsWith('.html')) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
