@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JLPT N1">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>JLPT N1 Study</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Nav Bar -->
+    <nav class="navbar">
+      <button class="nav-btn active" data-page="home" onclick="navigate('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">首頁</span>
+      </button>
+      <button class="nav-btn" data-page="vocab" onclick="navigate('vocab')">
+        <span class="nav-icon">📖</span>
+        <span class="nav-label">單字</span>
+      </button>
+      <button class="nav-btn" data-page="grammar" onclick="navigate('grammar')">
+        <span class="nav-icon">✍️</span>
+        <span class="nav-label">文法</span>
+      </button>
+      <button class="nav-btn" data-page="stats" onclick="navigate('stats')">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">進度</span>
+      </button>
+    </nav>
+
+    <!-- Pages -->
+    <main id="main-content">
+      <!-- HOME PAGE -->
+      <div id="page-home" class="page active">
+        <div class="home-header">
+          <h1>JLPT N1 <span class="accent">學習系統</span></h1>
+          <p class="subtitle" id="today-date"></p>
+        </div>
+        <div class="daily-plan" id="daily-plan-card">
+          <div class="plan-loading">載入今日計畫中...</div>
+        </div>
+        <div class="quick-actions">
+          <button class="action-btn primary" onclick="startVocabSession()">
+            <span>📖</span>
+            <div>
+              <strong>今日單字</strong>
+              <small id="vocab-count-home">-</small>
+            </div>
+          </button>
+          <button class="action-btn secondary" onclick="startGrammarSession()">
+            <span>✍️</span>
+            <div>
+              <strong>今日文法</strong>
+              <small id="grammar-count-home">-</small>
+            </div>
+          </button>
+        </div>
+        <div class="streak-card">
+          <div class="streak-info">
+            <span class="streak-icon">🔥</span>
+            <div>
+              <div class="streak-num" id="streak-num">0</div>
+              <div class="streak-label">連續學習天數</div>
+            </div>
+          </div>
+          <div class="mini-progress">
+            <div class="mini-bar">
+              <div class="mini-fill" id="mini-vocab-fill" style="width:0%"></div>
+            </div>
+            <span id="mini-vocab-text">單字 0%</span>
+          </div>
+          <div class="mini-progress">
+            <div class="mini-bar">
+              <div class="mini-fill grammar" id="mini-grammar-fill" style="width:0%"></div>
+            </div>
+            <span id="mini-grammar-text">文法 0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOCAB PAGE -->
+      <div id="page-vocab" class="page">
+        <div id="vocab-menu" class="session-menu">
+          <h2>單字練習</h2>
+          <div class="menu-options">
+            <button class="menu-btn" onclick="startVocabSession('new')">
+              <span class="menu-icon">🆕</span>
+              <div class="menu-text">
+                <strong>今日新單字</strong>
+                <small id="new-vocab-count">載入中...</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="startVocabSession('review')">
+              <span class="menu-icon">🔄</span>
+              <div class="menu-text">
+                <strong>複習待複習單字</strong>
+                <small id="due-vocab-count">載入中...</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="startVocabSession('all')">
+              <span class="menu-icon">📚</span>
+              <div class="menu-text">
+                <strong>今日全部</strong>
+                <small id="all-vocab-count">載入中...</small>
+              </div>
+            </button>
+          </div>
+          <div class="level-filter">
+            <label>篩選等級：</label>
+            <select id="vocab-level-filter" onchange="updateVocabCounts()">
+              <option value="all">全部 (N2+N1)</option>
+              <option value="N2">N2 只看</option>
+              <option value="N1">N1 只看</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Flashcard -->
+        <div id="vocab-session" class="vocab-session hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="exitVocabSession()">← 返回</button>
+            <div class="session-progress">
+              <span id="session-current">1</span> / <span id="session-total">10</span>
+            </div>
+            <div class="session-level-badge" id="session-level-badge">N2</div>
+          </div>
+          <div class="progress-bar-thin">
+            <div id="session-progress-bar" style="width:0%"></div>
+          </div>
+
+          <div class="flashcard-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+              <div class="card-front" id="card-front">
+                <div class="card-word" id="card-word"></div>
+                <div class="card-reading" id="card-reading"></div>
+                <div class="flip-hint">點擊翻面 👇</div>
+              </div>
+              <div class="card-back hidden" id="card-back">
+                <div class="card-meaning" id="card-meaning"></div>
+                <div class="card-pos" id="card-pos"></div>
+                <div class="card-sentences" id="card-sentences"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rating-panel hidden" id="rating-panel">
+            <p class="rating-prompt">你對這個單字的熟悉程度？</p>
+            <div class="rating-btns">
+              <button class="rating-btn low" onclick="rateCard('low')">
+                <span>😅</span>
+                <strong>不熟</strong>
+                <small>很快再出現</small>
+              </button>
+              <button class="rating-btn medium" onclick="rateCard('medium')">
+                <span>🤔</span>
+                <strong>普通</strong>
+                <small>幾天後再出現</small>
+              </button>
+              <button class="rating-btn high" onclick="rateCard('high')">
+                <span>😊</span>
+                <strong>熟悉</strong>
+                <small>較久後再出現</small>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session Complete -->
+        <div id="vocab-complete" class="session-complete hidden">
+          <div class="complete-icon">🎉</div>
+          <h2>單字練習完成！</h2>
+          <div id="vocab-complete-stats" class="complete-stats"></div>
+          <button class="action-btn primary full-width" onclick="exitVocabSession()">返回選單</button>
+        </div>
+      </div>
+
+      <!-- GRAMMAR PAGE -->
+      <div id="page-grammar" class="page">
+        <div id="grammar-menu" class="session-menu">
+          <h2>文法練習</h2>
+          <div class="menu-options">
+            <button class="menu-btn" onclick="startGrammarSession('new')">
+              <span class="menu-icon">🆕</span>
+              <div class="menu-text">
+                <strong>今日新文法</strong>
+                <small id="new-grammar-count">載入中...</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="startGrammarSession('review')">
+              <span class="menu-icon">🔄</span>
+              <div class="menu-text">
+                <strong>複習待複習文法</strong>
+                <small id="due-grammar-count">載入中...</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="startGrammarSession('all')">
+              <span class="menu-icon">📚</span>
+              <div class="menu-text">
+                <strong>今日全部</strong>
+                <small id="all-grammar-count">載入中...</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grammar Card -->
+        <div id="grammar-session" class="grammar-session hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="exitGrammarSession()">← 返回</button>
+            <div class="session-progress">
+              <span id="g-session-current">1</span> / <span id="g-session-total">5</span>
+            </div>
+            <div class="session-level-badge" id="g-session-level-badge">N1</div>
+          </div>
+          <div class="progress-bar-thin">
+            <div id="g-session-progress-bar" style="width:0%"></div>
+          </div>
+
+          <div class="grammar-card">
+            <div class="grammar-pattern" id="g-pattern"></div>
+            <div class="grammar-meaning" id="g-meaning"></div>
+            <div class="grammar-connection">
+              <span class="label">接續：</span>
+              <span id="g-connection"></span>
+            </div>
+            <div class="grammar-explanation" id="g-explanation"></div>
+          </div>
+
+          <div class="grammar-quiz" id="grammar-quiz">
+            <div class="quiz-instruction">選出正確填入空格的文法</div>
+            <div class="quiz-sentence" id="quiz-sentence"></div>
+            <div class="quiz-translation" id="quiz-translation"></div>
+            <div class="quiz-options" id="quiz-options"></div>
+            <div class="quiz-feedback hidden" id="quiz-feedback"></div>
+          </div>
+
+          <div class="grammar-rating hidden" id="grammar-rating">
+            <p class="rating-prompt">這個文法你的熟悉程度？</p>
+            <div class="rating-btns">
+              <button class="rating-btn low" onclick="rateGrammar('low')">
+                <span>😅</span><strong>不熟</strong>
+              </button>
+              <button class="rating-btn medium" onclick="rateGrammar('medium')">
+                <span>🤔</span><strong>普通</strong>
+              </button>
+              <button class="rating-btn high" onclick="rateGrammar('high')">
+                <span>😊</span><strong>熟悉</strong>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grammar Complete -->
+        <div id="grammar-complete" class="session-complete hidden">
+          <div class="complete-icon">🎊</div>
+          <h2>文法練習完成！</h2>
+          <div id="grammar-complete-stats" class="complete-stats"></div>
+          <button class="action-btn primary full-width" onclick="exitGrammarSession()">返回選單</button>
+        </div>
+      </div>
+
+      <!-- STATS PAGE -->
+      <div id="page-stats" class="page">
+        <h2>學習進度</h2>
+        <div class="stats-grid">
+          <div class="stat-card vocab">
+            <h3>單字</h3>
+            <div class="stat-circle" id="vocab-stat-circle">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#2a2a3e" stroke-width="10"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#6c63ff" stroke-width="10"
+                  stroke-dasharray="251.2" stroke-dashoffset="251.2" id="vocab-circle-fill"
+                  stroke-linecap="round" transform="rotate(-90 50 50)"/>
+              </svg>
+              <div class="stat-center">
+                <div class="stat-pct" id="vocab-pct">0%</div>
+                <div class="stat-sub">精熟</div>
+              </div>
+            </div>
+            <div class="stat-details">
+              <div class="stat-row"><span>已學習</span><span id="vocab-intro">0</span></div>
+              <div class="stat-row"><span>已精熟</span><span id="vocab-mastered">0</span></div>
+              <div class="stat-row"><span>總數</span><span id="vocab-total">0</span></div>
+            </div>
+          </div>
+          <div class="stat-card grammar">
+            <h3>文法</h3>
+            <div class="stat-circle" id="grammar-stat-circle">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#2a2a3e" stroke-width="10"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#ff6584" stroke-width="10"
+                  stroke-dasharray="251.2" stroke-dashoffset="251.2" id="grammar-circle-fill"
+                  stroke-linecap="round" transform="rotate(-90 50 50)"/>
+              </svg>
+              <div class="stat-center">
+                <div class="stat-pct" id="grammar-pct">0%</div>
+                <div class="stat-sub">精熟</div>
+              </div>
+            </div>
+            <div class="stat-details">
+              <div class="stat-row"><span>已學習</span><span id="grammar-intro">0</span></div>
+              <div class="stat-row"><span>已精熟</span><span id="grammar-mastered">0</span></div>
+              <div class="stat-row"><span>總數</span><span id="grammar-total">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="level-breakdown">
+          <h3>各等級進度</h3>
+          <div class="level-row">
+            <span class="level-tag n2">N2</span>
+            <div class="level-bar"><div id="n2-bar" class="level-fill n2-fill" style="width:0%"></div></div>
+            <span id="n2-pct">0%</span>
+          </div>
+          <div class="level-row">
+            <span class="level-tag n1">N1</span>
+            <div class="level-bar"><div id="n1-bar" class="level-fill n1-fill" style="width:0%"></div></div>
+            <span id="n1-pct">0%</span>
+          </div>
+        </div>
+
+        <div class="settings-panel">
+          <h3>每日目標設定</h3>
+          <div class="setting-row">
+            <label>每日新單字數</label>
+            <input type="number" id="setting-vocab" min="5" max="50" value="20" onchange="saveSettings()">
+          </div>
+          <div class="setting-row">
+            <label>每日新文法數</label>
+            <input type="number" id="setting-grammar" min="1" max="10" value="2" onchange="saveSettings()">
+          </div>
+          <button class="danger-btn" onclick="confirmReset()">重置所有進度</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data/vocab.js"></script>
+  <script src="data/grammar.js"></script>
+  <script src="data/srs.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

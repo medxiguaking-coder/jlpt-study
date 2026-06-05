@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "jlpt-study",
+      "runtimeExecutable": "C:\\Users\\h5111\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "3030", "--directory", "C:\\Users\\h5111\\Projects\\jlpt-study"],
+      "port": 3030
+    }
+  ]
+}
