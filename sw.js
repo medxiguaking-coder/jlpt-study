@@ -1,5 +1,5 @@
-const CACHE = 'jlpt-v2';
-const ASSETS = ['/', '/index.html', '/style.css', '/app.js', '/data/vocab.js', '/data/grammar.js', '/data/srs.js'];
+const CACHE = 'jlpt-v3';
+const ASSETS = ['/', '/index.html', '/style.css?v=3', '/app.js?v=3', '/data/vocab.js?v=3', '/data/grammar.js?v=3', '/data/srs.js?v=3'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
