@@ -361,27 +361,38 @@ function selectOption(btn, selected, answer, sentence) {
   const allBtns = document.querySelectorAll('.quiz-option');
   allBtns.forEach(b => b.classList.add('disabled'));
 
+  const grammar = getGrammarById(grammarSession.cards[grammarSession.index]);
   const feedback = document.getElementById('quiz-feedback');
+  const isCorrect = selected === answer;
 
-  if (selected === answer) {
+  if (isCorrect) {
     btn.classList.add('correct');
-    feedback.textContent = '✅ 正確！';
-    feedback.className = 'quiz-feedback correct-fb';
   } else {
     btn.classList.add('wrong');
     allBtns.forEach(b => {
       if (b.textContent === answer) b.classList.add('correct');
     });
-    const filled = sentence.replace('___', answer);
-    feedback.textContent = `❌ 正確答案：${answer}　→「${filled}」`;
-    feedback.className = 'quiz-feedback wrong-fb';
   }
 
-  // Add next button
-  const grammar = getGrammarById(grammarSession.cards[grammarSession.index]);
+  const filled = sentence.replace('___', `【${answer}】`);
+  const resultIcon = isCorrect ? '✅' : '❌';
+  const resultText = isCorrect ? '正確！' : `正確答案：${answer}`;
+
   const hasMore = grammarSession.quizIndex < grammar.choices.length - 1;
 
-  feedback.innerHTML += `<button class="next-quiz-btn" onclick="${hasMore ? 'nextQuiz()' : 'showGrammarRating()'}">${hasMore ? '下一題 →' : '評分 →'}</button>`;
+  feedback.className = `quiz-feedback ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+  feedback.innerHTML = `
+    <div class="fb-result">${resultIcon} ${resultText}</div>
+    <div class="fb-filled">${filled}</div>
+    <div class="fb-explanation">
+      <div class="fb-exp-title">📖 文法詳解</div>
+      <div class="fb-pattern">${grammar.pattern}</div>
+      <div class="fb-meaning-row"><span class="fb-label">意思：</span>${grammar.meaning}</div>
+      <div class="fb-meaning-row"><span class="fb-label">接續：</span>${grammar.connection}</div>
+      <div class="fb-exp-text">${grammar.explanation}</div>
+    </div>
+    <button class="next-quiz-btn" onclick="${hasMore ? 'nextQuiz()' : 'showGrammarRating()'}">${hasMore ? '下一題 →' : '完成，評分 →'}</button>
+  `;
 }
 
 function nextQuiz() {
