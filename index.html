@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>JLPT N1 Study</title>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <div id="app">
@@ -176,6 +176,7 @@
           <div class="complete-icon">🎉</div>
           <h2>單字練習完成！</h2>
           <div id="vocab-complete-stats" class="complete-stats"></div>
+          <button id="vocab-more-btn" class="action-btn secondary full-width hidden" onclick="continueMoreVocab()">📖 繼續學習更多新單字</button>
           <button class="action-btn primary full-width" onclick="exitVocabSession()">返回選單</button>
         </div>
       </div>
@@ -342,10 +343,10 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data/vocab.js?v=4"></script>
-  <script src="data/grammar.js?v=4"></script>
-  <script src="data/srs.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="data/vocab.js?v=5"></script>
+  <script src="data/grammar.js?v=5"></script>
+  <script src="data/srs.js?v=5"></script>
+  <script src="app.js?v=5"></script>
   <script>
     // Register service worker
     if ('serviceWorker' in navigator) {

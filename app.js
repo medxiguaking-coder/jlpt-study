@@ -3,6 +3,7 @@
 // ---- State ----
 let currentPage = 'home';
 let vocabSession = { cards: [], index: 0, flipped: false, ratings: {} };
+let vocabExtraOffset = 0;
 let grammarSession = { cards: [], index: 0, quizIndex: 0, answered: false, ratings: {} };
 
 // ---- Navigation ----
@@ -149,15 +150,19 @@ function startVocabSession(type) {
   } else if (type === 'review') {
     cards = shuffle(SRS.getDueCards(allVocab));
   } else if (type === 'new') {
-    cards = SRS.getNewCards(allVocab, newLimit);
+    cards = SRS.getNewCards(allVocab, vocabExtraOffset + newLimit).slice(vocabExtraOffset);
   }
 
   if (cards.length === 0) {
-    alert('今天沒有待練習的單字！明天再來吧 😊');
+    if (type === 'new') {
+      alert('所有單字都已經學過囉！太棒了 🎉');
+    } else {
+      alert('今天沒有待練習的單字！明天再來吧 😊');
+    }
     return;
   }
 
-  vocabSession = { cards, index: 0, flipped: false, ratings: {} };
+  vocabSession = { cards, index: 0, flipped: false, ratings: {}, type };
   document.getElementById('vocab-menu').classList.add('hidden');
   document.getElementById('vocab-complete').classList.add('hidden');
   document.getElementById('vocab-session').classList.remove('hidden');
@@ -228,9 +233,14 @@ function rateCard(rating) {
 }
 
 function finishVocabSession() {
-  const { ratings } = vocabSession;
+  const { ratings, type } = vocabSession;
   const counts = { low: 0, medium: 0, high: 0 };
   Object.values(ratings).forEach(r => counts[r]++);
+
+  if (type === 'new') {
+    const settings = SRS.loadSettings();
+    vocabExtraOffset += (settings.dailyVocab || 20);
+  }
 
   document.getElementById('vocab-session').classList.add('hidden');
   document.getElementById('vocab-complete').classList.remove('hidden');
@@ -240,11 +250,20 @@ function finishVocabSession() {
     <div class="complete-row"><span>🤔 普通</span><span style="color:var(--medium)">${counts.medium}</span></div>
     <div class="complete-row"><span>😅 不熟</span><span style="color:var(--low)">${counts.low}</span></div>
   `;
+
+  const moreBtn = document.getElementById('vocab-more-btn');
+  if (moreBtn) {
+    moreBtn.classList.toggle('hidden', type !== 'new');
+  }
 }
 
 function exitVocabSession() {
   showVocabMenu();
   renderVocabMenu();
+}
+
+function continueMoreVocab() {
+  startVocabSession('new');
 }
 
 // ---- Grammar Menu ----
