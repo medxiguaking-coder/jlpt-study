@@ -410,8 +410,15 @@ function selectOption(btn, selected, answer, sentence) {
       <div class="fb-meaning-row"><span class="fb-label">接續：</span>${grammar.connection}</div>
       <div class="fb-exp-text">${grammar.explanation}</div>
     </div>
-    <button class="next-quiz-btn" onclick="${hasMore ? 'nextQuiz()' : 'showGrammarRating()'}">${hasMore ? '下一題 →' : '完成，評分 →'}</button>
   `;
+
+  setTimeout(() => {
+    if (hasMore) {
+      nextQuiz();
+    } else {
+      showGrammarRating();
+    }
+  }, 1800);
 }
 
 function nextQuiz() {
