@@ -1,4 +1,4 @@
-const CACHE = 'jlpt-v17';
+const CACHE = 'jlpt-v18';
 const ASSETS = [
   '/style.css?v=4',
   '/app.js?v=4',
