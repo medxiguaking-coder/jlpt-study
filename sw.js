@@ -1,10 +1,10 @@
-const CACHE = 'jlpt-v25';
+const CACHE = 'jlpt-v26';
 const ASSETS = [
-  '/style.css?v=25',
-  '/app.js?v=25',
-  '/data/vocab.js?v=25',
-  '/data/grammar.js?v=25',
-  '/data/srs.js?v=25'
+  '/style.css?v=26',
+  '/app.js?v=26',
+  '/data/vocab.js?v=26',
+  '/data/grammar.js?v=26',
+  '/data/srs.js?v=26'
 ];
 
 self.addEventListener('install', e => {
