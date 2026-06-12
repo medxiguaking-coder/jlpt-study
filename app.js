@@ -5,6 +5,8 @@ let currentPage = 'home';
 let vocabSession = { cards: [], index: 0, flipped: false, ratings: {} };
 let vocabExtraOffset = 0;
 let grammarSession = { cards: [], index: 0, quizIndex: 0, answered: false, ratings: {} };
+let vocabQuiz = { questions: [], index: 0, score: 0, answered: false };
+let comparisonQuiz = { questions: [], index: 0, score: 0, answered: false };
 
 // ---- Navigation ----
 function navigate(page) {
@@ -266,6 +268,197 @@ function continueMoreVocab() {
   startVocabSession('new');
 }
 
+// ---- Vocab Quiz (漢字読み・語彙選択) ----
+function startVocabQuiz() {
+  const pool = shuffle([...VOCAB_DATA]).slice(0, 20);
+  const questions = pool.map(v => {
+    const isReading = Math.random() < 0.5;
+    if (isReading) {
+      const distractors = shuffle(VOCAB_DATA.filter(x => x.id !== v.id && x.reading !== v.reading))
+        .slice(0, 3).map(x => x.reading);
+      const options = shuffle([v.reading, ...distractors]);
+      return { prompt: '選出正確的讀音', word: v.word, options, answer: v.reading, vocab: v };
+    } else {
+      const distractors = shuffle(VOCAB_DATA.filter(x => x.id !== v.id && x.meaning !== v.meaning))
+        .slice(0, 3).map(x => x.meaning);
+      const options = shuffle([v.meaning, ...distractors]);
+      return { prompt: '選出正確的意思', word: `${v.word}（${v.reading}）`, options, answer: v.meaning, vocab: v };
+    }
+  });
+
+  vocabQuiz = { questions, index: 0, score: 0, answered: false };
+  document.getElementById('vocab-menu').classList.add('hidden');
+  document.getElementById('vocab-complete').classList.add('hidden');
+  document.getElementById('vocab-quiz-complete').classList.add('hidden');
+  document.getElementById('vocab-quiz-session').classList.remove('hidden');
+  renderVocabQuiz();
+}
+
+function renderVocabQuiz() {
+  const { questions, index } = vocabQuiz;
+  if (index >= questions.length) { finishVocabQuiz(); return; }
+
+  const q = questions[index];
+  document.getElementById('vq-current').textContent = index + 1;
+  document.getElementById('vq-total').textContent = questions.length;
+  document.getElementById('vq-progress-bar').style.width = (index / questions.length * 100) + '%';
+  document.getElementById('vq-prompt').textContent = q.prompt;
+  document.getElementById('vq-word').textContent = q.word;
+
+  vocabQuiz.answered = false;
+  const feedback = document.getElementById('vq-feedback');
+  feedback.className = 'quiz-feedback hidden';
+  feedback.textContent = '';
+
+  const opts = shuffle([...q.options]);
+  document.getElementById('vq-options').innerHTML = opts.map(o => `
+    <button class="quiz-option" onclick="selectVocabQuizOption(this, '${escapeAttr(o)}', '${escapeAttr(q.answer)}')">${o}</button>
+  `).join('');
+}
+
+function selectVocabQuizOption(btn, selected, answer) {
+  if (vocabQuiz.answered) return;
+  vocabQuiz.answered = true;
+
+  const allBtns = document.querySelectorAll('#vq-options .quiz-option');
+  allBtns.forEach(b => b.classList.add('disabled'));
+
+  const q = vocabQuiz.questions[vocabQuiz.index];
+  const isCorrect = selected === answer;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    vocabQuiz.score++;
+  } else {
+    btn.classList.add('wrong');
+    allBtns.forEach(b => { if (b.textContent === answer) b.classList.add('correct'); });
+  }
+
+  const v = q.vocab;
+  const hasMore = vocabQuiz.index < vocabQuiz.questions.length - 1;
+  const feedback = document.getElementById('vq-feedback');
+  feedback.className = `quiz-feedback ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+  feedback.innerHTML = `
+    <div class="fb-result">${isCorrect ? '✅ 正確！' : '❌ 正確答案：' + answer}</div>
+    <div class="fb-filled">${v.word}（${v.reading}） — ${v.meaning}</div>
+    <button class="next-quiz-btn" onclick="nextVocabQuiz()">${hasMore ? '下一題 →' : '查看結果 →'}</button>
+  `;
+}
+
+function nextVocabQuiz() {
+  vocabQuiz.index++;
+  renderVocabQuiz();
+}
+
+function finishVocabQuiz() {
+  document.getElementById('vocab-quiz-session').classList.add('hidden');
+  document.getElementById('vocab-quiz-complete').classList.remove('hidden');
+  const { questions, score } = vocabQuiz;
+  const pct = questions.length ? Math.round(score / questions.length * 100) : 0;
+  document.getElementById('vocab-quiz-complete-stats').innerHTML = `
+    <div class="complete-row"><span>總題數</span><span>${questions.length}</span></div>
+    <div class="complete-row"><span>答對</span><span style="color:var(--high)">${score}</span></div>
+    <div class="complete-row"><span>正確率</span><span>${pct}%</span></div>
+  `;
+}
+
+function exitVocabQuiz() {
+  document.getElementById('vocab-quiz-session').classList.add('hidden');
+  document.getElementById('vocab-quiz-complete').classList.add('hidden');
+  showVocabMenu();
+  renderVocabMenu();
+}
+
+// ---- Grammar Comparison (近義文法比較) ----
+function startGrammarComparison() {
+  const questions = shuffle([...GRAMMAR_COMPARE]);
+  comparisonQuiz = { questions, index: 0, score: 0, answered: false };
+  document.getElementById('grammar-menu').classList.add('hidden');
+  document.getElementById('grammar-complete').classList.add('hidden');
+  document.getElementById('grammar-comparison-complete').classList.add('hidden');
+  document.getElementById('grammar-comparison-session').classList.remove('hidden');
+  renderComparisonQuiz();
+}
+
+function renderComparisonQuiz() {
+  const { questions, index } = comparisonQuiz;
+  if (index >= questions.length) { finishGrammarComparison(); return; }
+
+  const q = questions[index];
+  document.getElementById('cmp-current').textContent = index + 1;
+  document.getElementById('cmp-total').textContent = questions.length;
+  document.getElementById('cmp-progress-bar').style.width = (index / questions.length * 100) + '%';
+  document.getElementById('cmp-sentence').innerHTML = formatSentence(q.sentence);
+  document.getElementById('cmp-translation').textContent = q.translation || '';
+
+  comparisonQuiz.answered = false;
+  const feedback = document.getElementById('cmp-feedback');
+  feedback.className = 'quiz-feedback hidden';
+  feedback.textContent = '';
+
+  const opts = shuffle([...q.options]);
+  document.getElementById('cmp-options').innerHTML = opts.map(o => `
+    <button class="quiz-option" onclick="selectComparisonOption(this, '${escapeAttr(o)}', '${escapeAttr(q.answer)}')">${o}</button>
+  `).join('');
+}
+
+function selectComparisonOption(btn, selected, answer) {
+  if (comparisonQuiz.answered) return;
+  comparisonQuiz.answered = true;
+
+  const allBtns = document.querySelectorAll('#cmp-options .quiz-option');
+  allBtns.forEach(b => b.classList.add('disabled'));
+
+  const q = comparisonQuiz.questions[comparisonQuiz.index];
+  const isCorrect = selected === answer;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    comparisonQuiz.score++;
+  } else {
+    btn.classList.add('wrong');
+    allBtns.forEach(b => { if (b.textContent === answer) b.classList.add('correct'); });
+  }
+
+  const filled = q.sentence.replace('___', `【${answer}】`);
+  const hasMore = comparisonQuiz.index < comparisonQuiz.questions.length - 1;
+  const feedback = document.getElementById('cmp-feedback');
+  feedback.className = `quiz-feedback ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+  feedback.innerHTML = `
+    <div class="fb-result">${isCorrect ? '✅ 正確！' : '❌ 正確答案：' + answer}</div>
+    <div class="fb-filled">${filled}</div>
+    <div class="fb-explanation">
+      <div class="fb-exp-title">📖 辨析說明</div>
+      <div class="fb-exp-text">${q.explanation}</div>
+    </div>
+    <button class="next-quiz-btn" onclick="nextComparisonQuiz()">${hasMore ? '下一題 →' : '查看結果 →'}</button>
+  `;
+}
+
+function nextComparisonQuiz() {
+  comparisonQuiz.index++;
+  renderComparisonQuiz();
+}
+
+function finishGrammarComparison() {
+  document.getElementById('grammar-comparison-session').classList.add('hidden');
+  document.getElementById('grammar-comparison-complete').classList.remove('hidden');
+  const { questions, score } = comparisonQuiz;
+  const pct = questions.length ? Math.round(score / questions.length * 100) : 0;
+  document.getElementById('grammar-comparison-complete-stats').innerHTML = `
+    <div class="complete-row"><span>總題數</span><span>${questions.length}</span></div>
+    <div class="complete-row"><span>答對</span><span style="color:var(--high)">${score}</span></div>
+    <div class="complete-row"><span>正確率</span><span>${pct}%</span></div>
+  `;
+}
+
+function exitGrammarComparison() {
+  document.getElementById('grammar-comparison-session').classList.add('hidden');
+  document.getElementById('grammar-comparison-complete').classList.add('hidden');
+  showGrammarMenu();
+  renderGrammarMenu();
+}
+
 // ---- Grammar Menu ----
 function renderGrammarMenu() {
   const allGrammar = getAllGrammarIds();
@@ -276,6 +469,7 @@ function renderGrammarMenu() {
   document.getElementById('due-grammar-count').textContent = `${due.length} 個待複習`;
   document.getElementById('new-grammar-count').textContent = `${newCards.length} 個新文法`;
   document.getElementById('all-grammar-count').textContent = `共 ${due.length + newCards.length} 個`;
+  document.getElementById('comparison-count').textContent = `${GRAMMAR_COMPARE.length} 題辨析練習`;
 
   showGrammarMenu();
 }

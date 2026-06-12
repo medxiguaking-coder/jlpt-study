@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>JLPT N1 Study</title>
-  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="style.css?v=29">
 </head>
 <body>
   <div id="app">
@@ -110,6 +110,13 @@
                 <small id="all-vocab-count">載入中...</small>
               </div>
             </button>
+            <button class="menu-btn" onclick="startVocabQuiz()">
+              <span class="menu-icon">🈂️</span>
+              <div class="menu-text">
+                <strong>漢字読み・語彙選択</strong>
+                <small>20題四選一測驗</small>
+              </div>
+            </button>
           </div>
           <div class="level-filter">
             <label>篩選等級：</label>
@@ -179,6 +186,34 @@
           <button id="vocab-more-btn" class="action-btn secondary full-width hidden" onclick="continueMoreVocab()">📖 繼續學習更多新單字</button>
           <button class="action-btn primary full-width" onclick="exitVocabSession()">返回選單</button>
         </div>
+
+        <!-- Vocab Quiz (Kanji Reading / Meaning Choice) -->
+        <div id="vocab-quiz-session" class="grammar-session hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="exitVocabQuiz()">← 返回</button>
+            <div class="session-progress">
+              <span id="vq-current">1</span> / <span id="vq-total">20</span>
+            </div>
+          </div>
+          <div class="progress-bar-thin">
+            <div id="vq-progress-bar" style="width:0%"></div>
+          </div>
+
+          <div class="grammar-quiz" id="vocab-quiz">
+            <div class="quiz-instruction" id="vq-prompt">選出正確答案</div>
+            <div class="quiz-sentence" id="vq-word"></div>
+            <div class="quiz-options" id="vq-options"></div>
+            <div class="quiz-feedback hidden" id="vq-feedback"></div>
+          </div>
+        </div>
+
+        <!-- Vocab Quiz Complete -->
+        <div id="vocab-quiz-complete" class="session-complete hidden">
+          <div class="complete-icon">🈂️</div>
+          <h2>語彙測驗完成！</h2>
+          <div id="vocab-quiz-complete-stats" class="complete-stats"></div>
+          <button class="action-btn primary full-width" onclick="exitVocabQuiz()">返回選單</button>
+        </div>
       </div>
 
       <!-- GRAMMAR PAGE -->
@@ -205,6 +240,13 @@
               <div class="menu-text">
                 <strong>今日全部</strong>
                 <small id="all-grammar-count">載入中...</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="startGrammarComparison()">
+              <span class="menu-icon">⚖️</span>
+              <div class="menu-text">
+                <strong>近義文法比較</strong>
+                <small id="comparison-count">載入中...</small>
               </div>
             </button>
           </div>
@@ -263,6 +305,35 @@
           <h2>文法練習完成！</h2>
           <div id="grammar-complete-stats" class="complete-stats"></div>
           <button class="action-btn primary full-width" onclick="exitGrammarSession()">返回選單</button>
+        </div>
+
+        <!-- Grammar Comparison (近義文法比較) -->
+        <div id="grammar-comparison-session" class="grammar-session hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="exitGrammarComparison()">← 返回</button>
+            <div class="session-progress">
+              <span id="cmp-current">1</span> / <span id="cmp-total">20</span>
+            </div>
+          </div>
+          <div class="progress-bar-thin">
+            <div id="cmp-progress-bar" style="width:0%"></div>
+          </div>
+
+          <div class="grammar-quiz" id="comparison-quiz">
+            <div class="quiz-instruction">選出最適合填入空格的文法（近義文法辨析）</div>
+            <div class="quiz-sentence" id="cmp-sentence"></div>
+            <div class="quiz-translation" id="cmp-translation"></div>
+            <div class="quiz-options" id="cmp-options"></div>
+            <div class="quiz-feedback hidden" id="cmp-feedback"></div>
+          </div>
+        </div>
+
+        <!-- Grammar Comparison Complete -->
+        <div id="grammar-comparison-complete" class="session-complete hidden">
+          <div class="complete-icon">⚖️</div>
+          <h2>近義文法比較完成！</h2>
+          <div id="grammar-comparison-complete-stats" class="complete-stats"></div>
+          <button class="action-btn primary full-width" onclick="exitGrammarComparison()">返回選單</button>
         </div>
       </div>
 
@@ -343,10 +414,11 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data/vocab.js?v=28"></script>
-  <script src="data/grammar.js?v=28"></script>
-  <script src="data/srs.js?v=28"></script>
-  <script src="app.js?v=28"></script>
+  <script src="data/vocab.js?v=29"></script>
+  <script src="data/grammar.js?v=29"></script>
+  <script src="data/grammar_compare.js?v=29"></script>
+  <script src="data/srs.js?v=29"></script>
+  <script src="app.js?v=29"></script>
   <script>
     // Register service worker
     if ('serviceWorker' in navigator) {
