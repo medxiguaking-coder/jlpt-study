@@ -19,6 +19,7 @@ function navigate(page) {
   if (page === 'vocab') renderVocabMenu();
   if (page === 'grammar') renderGrammarMenu();
   if (page === 'stats') renderStats();
+  if (page === 'keigo') renderKeigoMenu();
 }
 
 // ---- Data Helpers ----
@@ -717,6 +718,243 @@ function confirmReset() {
   }
 }
 
+// ---- Keigo ----
+let keigoVerbQuiz = { questions: [], index: 0, score: 0, answered: false };
+let keigoSituationQuiz = { questions: [], index: 0, score: 0, answered: false };
+
+function showKeigoMenu() {
+  document.getElementById('keigo-menu').classList.remove('hidden');
+  document.getElementById('keigo-verb-table').classList.add('hidden');
+  document.getElementById('keigo-verb-quiz').classList.add('hidden');
+  document.getElementById('keigo-verb-quiz-complete').classList.add('hidden');
+  document.getElementById('keigo-situation-quiz').classList.add('hidden');
+  document.getElementById('keigo-situation-quiz-complete').classList.add('hidden');
+  document.getElementById('keigo-rules-section').classList.add('hidden');
+}
+
+function renderKeigoMenu() {
+  document.getElementById('keigo-verb-count').textContent = `${KEIGO_VERBS.length} 個動詞對照`;
+  document.getElementById('keigo-situation-count').textContent = `${KEIGO_SITUATIONS.length} 道場面題`;
+  document.getElementById('keigo-rule-count').textContent = `${KEIGO_RULES.length} 張用法卡片`;
+  showKeigoMenu();
+}
+
+// ---- Verb Reference Table ----
+function showKeigoVerbs() {
+  document.getElementById('keigo-menu').classList.add('hidden');
+  document.getElementById('keigo-verb-table').classList.remove('hidden');
+  renderKeigoVerbList('all');
+}
+
+function filterKeigoVerbs(btn, cat) {
+  document.querySelectorAll('.keigo-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderKeigoVerbList(cat);
+}
+
+function renderKeigoVerbList(cat) {
+  const verbs = cat === 'all' ? KEIGO_VERBS : KEIGO_VERBS.filter(v => v.category === cat);
+  document.getElementById('keigo-verb-list').innerHTML = verbs.map(v => `
+    <div class="keigo-verb-card">
+      <div class="keigo-verb-header">
+        <span class="keigo-verb-plain">${v.plain}</span>
+        <span class="keigo-verb-meaning">${v.meaning_zh}</span>
+        <span class="keigo-cat-tag">${v.category}</span>
+      </div>
+      <div class="keigo-verb-row">
+        <span class="keigo-type sonkei">尊敬語</span>
+        <span class="keigo-verb-form">${v.sonkei}</span>
+      </div>
+      <div class="keigo-verb-row">
+        <span class="keigo-type kenjou">謙讓語</span>
+        <span class="keigo-verb-form">${v.kenjou}</span>
+      </div>
+      <div class="keigo-verb-row">
+        <span class="keigo-type teinei">丁寧語</span>
+        <span class="keigo-verb-form">${v.teinei}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---- Verb Quiz ----
+function startKeigoVerbQuiz() {
+  const types = ['sonkei', 'kenjou'];
+  const pool = KEIGO_VERBS.filter(v => v.sonkei !== '—' || v.kenjou !== '—');
+  const selected = shuffle([...pool]).slice(0, 15);
+  const questions = selected.map(v => {
+    const type = types[Math.floor(Math.random() * types.length)];
+    const form = type === 'sonkei' ? v.sonkei : v.kenjou;
+    const label = type === 'sonkei' ? '尊敬語' : '謙讓語';
+    const distractors = shuffle(KEIGO_VERBS.filter(x => x.id !== v.id))
+      .slice(0, 3)
+      .map(x => type === 'sonkei' ? x.sonkei : x.kenjou);
+    const options = shuffle([form, ...distractors]);
+    return { verb: v, type, label, answer: form, options };
+  });
+  keigoVerbQuiz = { questions, index: 0, score: 0, answered: false };
+  document.getElementById('keigo-menu').classList.add('hidden');
+  document.getElementById('keigo-verb-quiz-complete').classList.add('hidden');
+  document.getElementById('keigo-verb-quiz').classList.remove('hidden');
+  renderKeigoVerbQuiz();
+}
+
+function renderKeigoVerbQuiz() {
+  const q = keigoVerbQuiz.questions[keigoVerbQuiz.index];
+  if (!q) { finishKeigoVerbQuiz(); return; }
+  const pct = (keigoVerbQuiz.index / keigoVerbQuiz.questions.length) * 100;
+  document.getElementById('kvq-current').textContent = keigoVerbQuiz.index + 1;
+  document.getElementById('kvq-total').textContent = keigoVerbQuiz.questions.length;
+  document.getElementById('kvq-progress-bar').style.width = pct + '%';
+  document.getElementById('kvq-instruction').textContent = `「${q.verb.plain}」的${q.label}是？`;
+  document.getElementById('kvq-word').textContent = `${q.verb.plain}（${q.verb.meaning_zh}）`;
+  document.getElementById('kvq-type-badge').textContent = q.label;
+  document.getElementById('kvq-type-badge').className = 'keigo-quiz-type-badge ' + q.type;
+  keigoVerbQuiz.answered = false;
+  document.getElementById('kvq-feedback').classList.add('hidden');
+  document.getElementById('kvq-options').innerHTML = q.options.map(opt =>
+    `<button class="quiz-option" onclick="selectKeigoVerbOption(this,'${escapeAttr(opt)}','${escapeAttr(q.answer)}')">${opt}</button>`
+  ).join('');
+}
+
+function selectKeigoVerbOption(btn, selected, answer) {
+  if (keigoVerbQuiz.answered) return;
+  keigoVerbQuiz.answered = true;
+  const q = keigoVerbQuiz.questions[keigoVerbQuiz.index];
+  document.querySelectorAll('#kvq-options .quiz-option').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === answer) b.classList.add('correct');
+  });
+  const correct = selected === answer;
+  if (correct) { keigoVerbQuiz.score++; btn.classList.add('correct'); }
+  else btn.classList.add('wrong');
+  const fb = document.getElementById('kvq-feedback');
+  const isLast = keigoVerbQuiz.index + 1 >= keigoVerbQuiz.questions.length;
+  fb.innerHTML = `
+    <div class="fb-result ${correct ? 'correct-fb' : 'wrong-fb'}">${correct ? '✓ 正確！' : '✗ 錯誤'}</div>
+    <div class="fb-filled">${q.verb.plain} → <strong>${answer}</strong>（${q.label}）</div>
+    <div class="fb-explanation"><span class="fb-exp-title">📌 對照</span>
+      <span class="fb-exp-text">尊敬語：${q.verb.sonkei}　謙讓語：${q.verb.kenjou}　丁寧語：${q.verb.teinei}</span></div>
+    <button class="next-quiz-btn" onclick="nextKeigoVerbQuiz()">${isLast ? '查看結果 →' : '下一題 →'}</button>
+  `;
+  fb.classList.remove('hidden');
+}
+
+function nextKeigoVerbQuiz() {
+  keigoVerbQuiz.index++;
+  renderKeigoVerbQuiz();
+}
+
+function finishKeigoVerbQuiz() {
+  document.getElementById('keigo-verb-quiz').classList.add('hidden');
+  const el = document.getElementById('keigo-verb-quiz-complete');
+  el.classList.remove('hidden');
+  const pct = Math.round(keigoVerbQuiz.score / keigoVerbQuiz.questions.length * 100);
+  document.getElementById('keigo-verb-quiz-stats').innerHTML = `
+    <div class="complete-row"><span>總題數</span><span>${keigoVerbQuiz.questions.length} 題</span></div>
+    <div class="complete-row"><span>答對</span><span>${keigoVerbQuiz.score} 題</span></div>
+    <div class="complete-row"><span>正確率</span><span>${pct}%</span></div>
+  `;
+}
+
+function exitKeigoVerbQuiz() {
+  document.getElementById('keigo-verb-quiz').classList.add('hidden');
+  document.getElementById('keigo-verb-quiz-complete').classList.add('hidden');
+  showKeigoMenu();
+}
+
+// ---- Situation Quiz ----
+function startKeigoSituationQuiz() {
+  const questions = shuffle([...KEIGO_SITUATIONS]).slice(0, 15);
+  keigoSituationQuiz = { questions, index: 0, score: 0, answered: false };
+  document.getElementById('keigo-menu').classList.add('hidden');
+  document.getElementById('keigo-situation-quiz-complete').classList.add('hidden');
+  document.getElementById('keigo-situation-quiz').classList.remove('hidden');
+  renderKeigoSituationQuiz();
+}
+
+function renderKeigoSituationQuiz() {
+  const q = keigoSituationQuiz.questions[keigoSituationQuiz.index];
+  if (!q) { finishKeigoSituationQuiz(); return; }
+  const pct = (keigoSituationQuiz.index / keigoSituationQuiz.questions.length) * 100;
+  document.getElementById('ksq-current').textContent = keigoSituationQuiz.index + 1;
+  document.getElementById('ksq-total').textContent = keigoSituationQuiz.questions.length;
+  document.getElementById('ksq-progress-bar').style.width = pct + '%';
+  document.getElementById('ksq-scene').textContent = q.scene;
+  keigoSituationQuiz.answered = false;
+  document.getElementById('ksq-feedback').classList.add('hidden');
+  document.getElementById('ksq-options').innerHTML = shuffle([...q.options]).map(opt =>
+    `<button class="quiz-option" onclick="selectKeigoSituationOption(this,'${escapeAttr(opt)}','${escapeAttr(q.answer)}')">${opt}</button>`
+  ).join('');
+}
+
+function selectKeigoSituationOption(btn, selected, answer) {
+  if (keigoSituationQuiz.answered) return;
+  keigoSituationQuiz.answered = true;
+  const q = keigoSituationQuiz.questions[keigoSituationQuiz.index];
+  document.querySelectorAll('#ksq-options .quiz-option').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === answer) b.classList.add('correct');
+  });
+  const correct = selected === answer;
+  if (correct) { keigoSituationQuiz.score++; btn.classList.add('correct'); }
+  else btn.classList.add('wrong');
+  const fb = document.getElementById('ksq-feedback');
+  const isLast = keigoSituationQuiz.index + 1 >= keigoSituationQuiz.questions.length;
+  fb.innerHTML = `
+    <div class="fb-result ${correct ? 'correct-fb' : 'wrong-fb'}">${correct ? '✓ 正確！' : '✗ 錯誤'}</div>
+    <div class="fb-filled"><strong>${answer}</strong></div>
+    <div class="fb-explanation"><span class="fb-exp-title">💬 解說</span>
+      <span class="fb-exp-text">${q.explanation}</span></div>
+    <button class="next-quiz-btn" onclick="nextKeigoSituationQuiz()">${isLast ? '查看結果 →' : '下一題 →'}</button>
+  `;
+  fb.classList.remove('hidden');
+}
+
+function nextKeigoSituationQuiz() {
+  keigoSituationQuiz.index++;
+  renderKeigoSituationQuiz();
+}
+
+function finishKeigoSituationQuiz() {
+  document.getElementById('keigo-situation-quiz').classList.add('hidden');
+  const el = document.getElementById('keigo-situation-quiz-complete');
+  el.classList.remove('hidden');
+  const pct = Math.round(keigoSituationQuiz.score / keigoSituationQuiz.questions.length * 100);
+  document.getElementById('keigo-situation-quiz-stats').innerHTML = `
+    <div class="complete-row"><span>總題數</span><span>${keigoSituationQuiz.questions.length} 題</span></div>
+    <div class="complete-row"><span>答對</span><span>${keigoSituationQuiz.score} 題</span></div>
+    <div class="complete-row"><span>正確率</span><span>${pct}%</span></div>
+  `;
+}
+
+function exitKeigoSituationQuiz() {
+  document.getElementById('keigo-situation-quiz').classList.add('hidden');
+  document.getElementById('keigo-situation-quiz-complete').classList.add('hidden');
+  showKeigoMenu();
+}
+
+// ---- Rules Cards ----
+function showKeigoRules() {
+  document.getElementById('keigo-menu').classList.add('hidden');
+  document.getElementById('keigo-rules-section').classList.remove('hidden');
+  const cats = ['尊敬語', '謙讓語Ⅰ', '謙讓語Ⅱ（丁重語）', '丁寧語', '美化語', '敬語的誤用', '待遇表現'];
+  document.getElementById('keigo-rules-list').innerHTML = cats.map(cat => {
+    const rules = KEIGO_RULES.filter(r => r.category === cat);
+    if (!rules.length) return '';
+    return `<div class="keigo-rules-category"><h4 class="keigo-cat-heading">${cat}</h4>` +
+      rules.map(r => `
+        <div class="keigo-rule-card">
+          <div class="keigo-rule-title">${r.title}</div>
+          <div class="keigo-rule-pattern">${r.pattern}</div>
+          <div class="keigo-rule-example">${r.example}</div>
+          <div class="keigo-rule-meaning">${r.meaning_zh}</div>
+          <div class="keigo-rule-note">${r.note}</div>
+        </div>
+      `).join('') + '</div>';
+  }).join('');
+}
+
 // ---- Utils ----
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -731,6 +969,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderHome();
   renderVocabMenu();
   renderGrammarMenu();
+  renderKeigoMenu();
   // Update vocab/grammar counts on home page too
   const allVocab = getAllVocabIds();
   const allGrammar = getAllGrammarIds();

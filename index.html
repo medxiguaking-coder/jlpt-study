@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>JLPT N1 Study</title>
-  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
   <div id="app">
@@ -27,6 +27,10 @@
       <button class="nav-btn" data-page="grammar" onclick="navigate('grammar')">
         <span class="nav-icon">✍️</span>
         <span class="nav-label">文法</span>
+      </button>
+      <button class="nav-btn" data-page="keigo" onclick="navigate('keigo')">
+        <span class="nav-icon">🎌</span>
+        <span class="nav-label">敬語</span>
       </button>
       <button class="nav-btn" data-page="stats" onclick="navigate('stats')">
         <span class="nav-icon">📊</span>
@@ -337,6 +341,126 @@
         </div>
       </div>
 
+      <!-- KEIGO PAGE -->
+      <div id="page-keigo" class="page">
+        <!-- Keigo Menu -->
+        <div id="keigo-menu" class="session-menu">
+          <h2>敬語練習</h2>
+          <div class="keigo-intro">
+            <p>掌握尊敬語・謙讓語・丁寧語，商務溝通不失禮！</p>
+          </div>
+          <div class="menu-options">
+            <button class="menu-btn" onclick="showKeigoVerbs()">
+              <span class="menu-icon">📋</span>
+              <div class="menu-text">
+                <strong>動詞敬語對照表</strong>
+                <small id="keigo-verb-count">載入中...</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="startKeigoVerbQuiz()">
+              <span class="menu-icon">🔄</span>
+              <div class="menu-text">
+                <strong>動詞轉換練習</strong>
+                <small>尊敬語・謙讓語四選一</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="startKeigoSituationQuiz()">
+              <span class="menu-icon">🎭</span>
+              <div class="menu-text">
+                <strong>場面應用測驗</strong>
+                <small id="keigo-situation-count">載入中...</small>
+              </div>
+            </button>
+            <button class="menu-btn" onclick="showKeigoRules()">
+              <span class="menu-icon">📖</span>
+              <div class="menu-text">
+                <strong>敬語用法卡片</strong>
+                <small id="keigo-rule-count">載入中...</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Verb Reference Table -->
+        <div id="keigo-verb-table" class="keigo-section hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="showKeigoMenu()">← 返回</button>
+            <h3>動詞敬語對照</h3>
+          </div>
+          <div class="keigo-filter">
+            <button class="keigo-filter-btn active" data-cat="all" onclick="filterKeigoVerbs(this,'all')">全部</button>
+            <button class="keigo-filter-btn" data-cat="存在・移動" onclick="filterKeigoVerbs(this,'存在・移動')">移動</button>
+            <button class="keigo-filter-btn" data-cat="授受" onclick="filterKeigoVerbs(this,'授受')">授受</button>
+            <button class="keigo-filter-btn" data-cat="言語" onclick="filterKeigoVerbs(this,'言語')">言語</button>
+            <button class="keigo-filter-btn" data-cat="行動" onclick="filterKeigoVerbs(this,'行動')">行動</button>
+          </div>
+          <div id="keigo-verb-list" class="keigo-verb-list"></div>
+        </div>
+
+        <!-- Verb Quiz Session -->
+        <div id="keigo-verb-quiz" class="grammar-session hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="exitKeigoVerbQuiz()">← 返回</button>
+            <div class="session-progress">
+              <span id="kvq-current">1</span> / <span id="kvq-total">15</span>
+            </div>
+          </div>
+          <div class="progress-bar-thin">
+            <div id="kvq-progress-bar" style="width:0%"></div>
+          </div>
+          <div class="grammar-quiz">
+            <div class="quiz-instruction" id="kvq-instruction">選出正確的敬語形式</div>
+            <div class="keigo-quiz-type-badge" id="kvq-type-badge"></div>
+            <div class="quiz-sentence" id="kvq-word"></div>
+            <div class="quiz-options" id="kvq-options"></div>
+            <div class="quiz-feedback hidden" id="kvq-feedback"></div>
+          </div>
+        </div>
+
+        <!-- Verb Quiz Complete -->
+        <div id="keigo-verb-quiz-complete" class="session-complete hidden">
+          <div class="complete-icon">🔄</div>
+          <h2>動詞轉換完成！</h2>
+          <div id="keigo-verb-quiz-stats" class="complete-stats"></div>
+          <button class="action-btn primary full-width" onclick="exitKeigoVerbQuiz()">返回選單</button>
+        </div>
+
+        <!-- Situation Quiz Session -->
+        <div id="keigo-situation-quiz" class="grammar-session hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="exitKeigoSituationQuiz()">← 返回</button>
+            <div class="session-progress">
+              <span id="ksq-current">1</span> / <span id="ksq-total">15</span>
+            </div>
+          </div>
+          <div class="progress-bar-thin">
+            <div id="ksq-progress-bar" style="width:0%"></div>
+          </div>
+          <div class="grammar-quiz">
+            <div class="quiz-instruction" id="ksq-scene"></div>
+            <div class="quiz-options" id="ksq-options"></div>
+            <div class="quiz-feedback hidden" id="ksq-feedback"></div>
+          </div>
+        </div>
+
+        <!-- Situation Quiz Complete -->
+        <div id="keigo-situation-quiz-complete" class="session-complete hidden">
+          <div class="complete-icon">🎭</div>
+          <h2>場面應用完成！</h2>
+          <div id="keigo-situation-quiz-stats" class="complete-stats"></div>
+          <button class="action-btn primary full-width" onclick="exitKeigoSituationQuiz()">返回選單</button>
+        </div>
+
+        <!-- Rules Cards -->
+        <div id="keigo-rules-section" class="keigo-section hidden">
+          <div class="session-header">
+            <button class="back-btn" onclick="showKeigoMenu()">← 返回</button>
+            <h3>敬語用法卡片</h3>
+          </div>
+          <div id="keigo-rules-list" class="keigo-rules-list"></div>
+        </div>
+      </div>
+
       <!-- STATS PAGE -->
       <div id="page-stats" class="page">
         <h2>學習進度</h2>
@@ -414,11 +538,12 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data/vocab.js?v=29"></script>
-  <script src="data/grammar.js?v=29"></script>
-  <script src="data/grammar_compare.js?v=29"></script>
-  <script src="data/srs.js?v=29"></script>
-  <script src="app.js?v=29"></script>
+  <script src="data/vocab.js?v=30"></script>
+  <script src="data/grammar.js?v=30"></script>
+  <script src="data/grammar_compare.js?v=30"></script>
+  <script src="data/keigo.js?v=30"></script>
+  <script src="data/srs.js?v=30"></script>
+  <script src="app.js?v=30"></script>
   <script>
     // Register service worker
     if ('serviceWorker' in navigator) {
