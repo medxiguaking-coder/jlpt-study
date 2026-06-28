@@ -87,21 +87,21 @@ function getStreak() {
   const raw = localStorage.getItem('jlpt_streak');
   if (!raw) return 0;
   const { count, lastDate } = JSON.parse(raw);
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const today = localDateStr();
+  const yesterday = localDateStr(new Date(Date.now() - 86400000));
   if (lastDate === today || lastDate === yesterday) return count;
   return 0;
 }
 
 function updateStreak() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const raw = localStorage.getItem('jlpt_streak');
   if (!raw) {
     localStorage.setItem('jlpt_streak', JSON.stringify({ count: 1, lastDate: today }));
     return;
   }
   const { count, lastDate } = JSON.parse(raw);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const yesterday = localDateStr(new Date(Date.now() - 86400000));
   if (lastDate === today) return;
   if (lastDate === yesterday) {
     localStorage.setItem('jlpt_streak', JSON.stringify({ count: count + 1, lastDate: today }));
@@ -705,7 +705,7 @@ function saveSettings() {
   settings.dailyGrammar = parseInt(document.getElementById('setting-grammar').value) || 2;
   SRS.saveSettings(settings);
   // Clear today's plan cache so it regenerates
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   localStorage.removeItem('jlpt_plan_' + today);
 }
 

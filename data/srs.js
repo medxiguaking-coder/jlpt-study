@@ -1,6 +1,13 @@
 // Spaced Repetition System (SM-2 based)
 // Stores state in localStorage
 
+function localDateStr(date) {
+  const d = date || new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
 const SRS = {
   STORAGE_KEY: 'jlpt_srs_data',
   SETTINGS_KEY: 'jlpt_settings',
@@ -23,7 +30,7 @@ const SRS = {
     return raw ? JSON.parse(raw) : {
       dailyVocab: 20,
       dailyGrammar: 2,
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: localDateStr(),
       n2First: true,
     };
   },
@@ -41,7 +48,7 @@ const SRS = {
         interval: 1,        // days until next review
         easeFactor: 2.5,    // SM-2 ease factor
         repetitions: 0,     // number of successful reviews
-        nextReview: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        nextReview: localDateStr(), // YYYY-MM-DD
         lastRating: null,   // 'low' | 'medium' | 'high'
         totalReviews: 0,
         introduced: false,
@@ -56,7 +63,7 @@ const SRS = {
   updateCard(id, rating) {
     const data = this.load();
     const card = this.getCard(id);
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr();
 
     card.totalReviews++;
     card.introduced = true;
@@ -88,10 +95,10 @@ const SRS = {
     // Cap interval at 180 days
     card.interval = Math.min(card.interval, 180);
 
-    // Set next review date
+    // Set next review date (use local date to avoid UTC timezone offset)
     const next = new Date();
     next.setDate(next.getDate() + card.interval);
-    card.nextReview = next.toISOString().split('T')[0];
+    card.nextReview = localDateStr(next);
 
     data[id] = card;
     this.save(data);
@@ -100,7 +107,7 @@ const SRS = {
 
   // Get cards due today (for review)
   getDueCards(allIds) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr();
     const data = this.load();
     return allIds.filter(id => {
       const card = data[id];
@@ -118,7 +125,7 @@ const SRS = {
   // Get today's session plan
   getTodayPlan(vocabIds, grammarIds) {
     const settings = this.loadSettings();
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr();
     const planKey = 'jlpt_plan_' + today;
     const existing = localStorage.getItem(planKey);
     if (existing) return JSON.parse(existing);
