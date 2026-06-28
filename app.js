@@ -783,13 +783,29 @@ function startKeigoVerbQuiz() {
   const pool = KEIGO_VERBS.filter(v => v.sonkei !== '—' || v.kenjou !== '—');
   const selected = shuffle([...pool]).slice(0, 15);
   const questions = selected.map(v => {
-    const type = types[Math.floor(Math.random() * types.length)];
-    const form = type === 'sonkei' ? v.sonkei : v.kenjou;
+    // Pick type only if that form exists (not '—')
+    const availTypes = types.filter(t => v[t] !== '—');
+    const type = availTypes[Math.floor(Math.random() * availTypes.length)];
+    const form = v[type];
     const label = type === 'sonkei' ? '尊敬語' : '謙讓語';
-    const distractors = shuffle(KEIGO_VERBS.filter(x => x.id !== v.id))
-      .slice(0, 3)
-      .map(x => type === 'sonkei' ? x.sonkei : x.kenjou);
-    const options = shuffle([form, ...distractors]);
+    // Build distractor pool: unique forms, not equal to answer, not '—'
+    const distPool = [];
+    const seen = new Set([form]);
+    const candidates = shuffle(KEIGO_VERBS.filter(x => x.id !== v.id));
+    for (const x of candidates) {
+      const f = x[type];
+      if (f !== '—' && !seen.has(f)) { seen.add(f); distPool.push(f); }
+      if (distPool.length === 3) break;
+    }
+    // Fallback: use teinei forms if not enough unique distractors
+    if (distPool.length < 3) {
+      for (const x of candidates) {
+        const f = x.teinei;
+        if (!seen.has(f)) { seen.add(f); distPool.push(f); }
+        if (distPool.length === 3) break;
+      }
+    }
+    const options = shuffle([form, ...distPool]);
     return { verb: v, type, label, answer: form, options };
   });
   keigoVerbQuiz = { questions, index: 0, score: 0, answered: false };
